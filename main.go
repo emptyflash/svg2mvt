@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"math"
 	"strings"
+    "strconv"
+    "reflect"
 
 	rtree "github.com/dhconnelly/rtreego"
 	"github.com/rustyoz/svg"
@@ -63,6 +65,16 @@ func insertPath(rt *rtree.Rtree, p *svg.Path) {
 	rt.Insert(feat)
 }
 
+func insertLine(rt *rtree.Rtree, l *svg.Line) {
+    x1, _ := strconv.ParseFloat(l.X1, 64)
+    y1, _ := strconv.ParseFloat(l.Y1, 64)
+    x2, _ := strconv.ParseFloat(l.X2, 64)
+    y2, _ := strconv.ParseFloat(l.Y2, 64)
+    segment := svg.Segment { 1, true, [][2]float64{[2]float64{x1, y1}, [2]float64{x2, y2}}}
+    feat := Feature{l.Id, "", []svg.Segment{segment}}
+    rt.Insert(feat)
+}
+
 func insertGroup(rt *rtree.Rtree, g *svg.Group) {
 	if g.Parent != nil {
 		g.Transform.MultiplyWith(*g.Parent.Transform)
@@ -72,11 +84,17 @@ func insertGroup(rt *rtree.Rtree, g *svg.Group) {
 	for _, elem := range g.Elements {
 		switch elem.(type) {
 		case *svg.Group:
+            fmt.Println("test")
 			group := elem.(*svg.Group)
 			insertGroup(rt, group)
 		case *svg.Path:
+            fmt.Println("test")
 			insertPath(rt, elem.(*svg.Path))
+        case *svg.Line:
+            fmt.Println("test")
+            insertLine(rt, elem.(*svg.Line))
 		default:
+            fmt.Println(reflect.Indirect(reflect.ValueOf(&elem)).Elem().Type())
 		}
 	}
 }
@@ -102,7 +120,7 @@ func main() {
 	fmt.Println("Inserting elements")
 	insertElements(rt, svga)
 	fmt.Println("done, searching")
-	bounds, _ := rtree.NewRect([]float64{0, 0}, []float64{3000, 3000})
+	bounds, _ := rtree.NewRect([]float64{0, 0}, []float64{500,500})
 	results := rt.SearchIntersect(bounds)
 	fmt.Println("done")
 	fmt.Println(len(results))
